@@ -145,13 +145,12 @@ window.addEventListener('hashchange', function () {
 
 for (var i = 0; i < 10; i++) {
   // li는 항상 새로 만들어져야 하므로(덮어씌우기X) 반복문 안 쪽에서 객체 생성
+  var div = document.createElement('div');
   var li = document.createElement('li');
-  var a = document.createElement('a');
-  a.href = "#".concat(newsFeed[i].id);
-  a.innerHTML = "".concat(newsFeed[i].title, " ").concat(newsFeed[i].comments_count);
-  a.addEventListener('click', function () {});
-  li.appendChild(a);
-  ul.appendChild(li);
+  var a = document.createElement('a'); // innerHTML 속성을 제공할 DOM
+
+  div.innerHTML = "\n    <li>\n      <a href=\"#".concat(newsFeed[i].id, "\">\n      ").concat(newsFeed[i].title, " ").concat(newsFeed[i].comments_count, "\n      </a>\n    </li>\n  ");
+  ul.appendChild(div.firstElementChild);
 } // 출력 부분
 
 

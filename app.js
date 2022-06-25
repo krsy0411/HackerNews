@@ -32,15 +32,20 @@ window.addEventListener('hashchange', function() {
 // NEWS_FEED
 for(let i = 0; i < 10; i++) {
   // li는 항상 새로 만들어져야 하므로(덮어씌우기X) 반복문 안 쪽에서 객체 생성
+  const div = document.createElement('div');
   const li = document.createElement('li');
   const a = document.createElement('a');
 
-  a.href = `#${newsFeed[i].id}`;
-  a.innerHTML = `${newsFeed[i].title} ${newsFeed[i].comments_count}`;
+  // innerHTML 속성을 제공할 DOM
+  div.innerHTML = `
+    <li>
+      <a href="#${newsFeed[i].id}">
+      ${newsFeed[i].title} ${newsFeed[i].comments_count}
+      </a>
+    </li>
+  `;
 
-  a.addEventListener('click', function() {});
-  li.appendChild(a);
-  ul.appendChild(li);
+  ul.appendChild(div.firstElementChild);
 }
 
 // 출력 부분
