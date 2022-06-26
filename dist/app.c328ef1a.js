@@ -142,27 +142,23 @@ window.addEventListener('hashchange', function () {
   var id = location.hash.substring(1); // content_url 변수에 있는 @id(임시)를 알아낸 id값으로 대체
 
   var newsContent = getData(CONTENT_URL.replace('@id', id));
-  var title = document.createElement('h1');
-  title.innerHTML = newsContent.title;
-  content.appendChild(title);
-  console.log(newsContent);
-}); // NEWS_FEED
+  var title = document.createElement('h1'); // 글 내용 UI
+
+  container.innerHTML = "\n  <h1>".concat(newsContent.title, "</h1>\n\n  <div>\n    <a href=\"#\">\uBAA9\uB85D\uC73C\uB85C</a>\n  </div>\n  ");
+}); // ul 태그 안 쪽에 li a 태그를 10묶음 처리 해야하기 때문에 배열 이용
+
+var newsList = []; // 배열 안에 먼저 ul태그 삽입
+
+newsList.push('<ul>'); // NEWS_FEED
 
 for (var i = 0; i < 10; i++) {
-  // li는 항상 새로 만들어져야 하므로(덮어씌우기X) 반복문 안 쪽에서 객체 생성
-  var div = document.createElement('div');
-  var li = document.createElement('li');
-  var a = document.createElement('a'); // 문자열을 활용 - html 구조 작성(DOM작성)
+  // 목록 UI
+  newsList.push("\n    <li>\n      <a href=\"#".concat(newsFeed[i].id, "\">\n      ").concat(newsFeed[i].title, " ").concat(newsFeed[i].comments_count, "\n      </a>\n    </li>\n  "));
+}
 
-  div.innerHTML = "\n    <li>\n      <a href=\"#".concat(newsFeed[i].id, "\">\n      ").concat(newsFeed[i].title, " ").concat(newsFeed[i].comments_count, "\n      </a>\n    </li>\n  "); // div ul li 순서
-  // ul의 자식요소로 div의 첫번째 자식요소(li)
+newsList.push('</ul>'); // 덮어씌우기
 
-  ul.appendChild(div.firstElementChild);
-} // 출력 부분
-
-
-container.appendChild(ul);
-container.appendChild(content);
+container.innerHTML = newsList.join('');
 },{}],"../../AppData/Roaming/npm/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';

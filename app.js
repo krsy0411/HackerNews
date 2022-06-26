@@ -28,32 +28,33 @@ window.addEventListener('hashchange', function() {
   const newsContent = getData(CONTENT_URL.replace('@id', id));
   const title = document.createElement('h1');
 
-  title.innerHTML = newsContent.title;
-  content.appendChild(title);
-  console.log(newsContent);
+  // 글 내용 UI
+  container.innerHTML = `
+  <h1>${newsContent.title}</h1>
+
+  <div>
+    <a href="#">목록으로</a>
+  </div>
+  `;
 });
+
+// ul 태그 안 쪽에 li a 태그를 10묶음 처리 해야하기 때문에 배열 이용
+const newsList = [];
+// 배열 안에 먼저 ul태그 삽입
+newsList.push('<ul>');
 
 // NEWS_FEED
 for(let i = 0; i < 10; i++) {
-  // li는 항상 새로 만들어져야 하므로(덮어씌우기X) 반복문 안 쪽에서 객체 생성
-  const div = document.createElement('div');
-  const li = document.createElement('li');
-  const a = document.createElement('a');
-
-  // 문자열을 활용 - html 구조 작성(DOM작성)
-  div.innerHTML = `
+  // 목록 UI
+  newsList.push(`
     <li>
       <a href="#${newsFeed[i].id}">
       ${newsFeed[i].title} ${newsFeed[i].comments_count}
       </a>
     </li>
-  `;
-
-  // div ul li 순서
-  // ul의 자식요소로 div의 첫번째 자식요소(li)
-  ul.appendChild(div.firstElementChild);
+  `);
 }
 
-// 출력 부분
-container.appendChild(ul);
-container.appendChild(content);
+newsList.push('</ul>');
+// 덮어씌우기
+container.innerHTML = newsList.join('');
