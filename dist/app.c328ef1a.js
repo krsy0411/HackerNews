@@ -131,34 +131,59 @@ function getData(url) {
   ajax.send(); // 함수처리의 결과물을 반환
 
   return JSON.parse(ajax.response);
+} // 뉴스 제목
+
+
+function newsFeed() {
+  // ul 태그 안 쪽에 li a 태그를 10묶음 처리 해야하기 때문에 배열 이용
+  var newsList = [];
+  var newsFeed = getData(NEWS_URL); // 배열 안에 먼저 ul태그 삽입
+
+  newsList.push('<ul>');
+
+  for (var i = 0; i < 10; i++) {
+    // 목록 UI
+    newsList.push("\n    <li>\n      <a href=\"#".concat(newsFeed[i].id, "\">\n      ").concat(newsFeed[i].title, " ").concat(newsFeed[i].comments_count, "\n      </a>\n    </li>\n  "));
+  }
+
+  newsList.push('</ul>'); // 덮어씌우기
+
+  container.innerHTML = newsList.join('');
 }
 
-var newsFeed = getData(NEWS_URL);
-var ul = document.createElement('ul'); // window객체
-// NEWS_CONTENT
+; // 뉴스 내용
 
-window.addEventListener('hashchange', function () {
+function newsDetail() {
   // hash를 알아내기(맨 앞의 #제거버젼)
   var id = location.hash.substring(1); // content_url 변수에 있는 @id(임시)를 알아낸 id값으로 대체
 
   var newsContent = getData(CONTENT_URL.replace('@id', id));
   var title = document.createElement('h1'); // 글 내용 UI
 
-  container.innerHTML = "\n  <h1>".concat(newsContent.title, "</h1>\n\n  <div>\n    <a href=\"#\">\uBAA9\uB85D\uC73C\uB85C</a>\n  </div>\n  ");
-}); // ul 태그 안 쪽에 li a 태그를 10묶음 처리 해야하기 때문에 배열 이용
+  container.innerHTML = "\n  <h1>".concat(newsContent.title, "</h1>\n  \n  <div>\n    <a href=\"#\">\uBAA9\uB85D\uC73C\uB85C</a>\n  </div>\n  ");
+} // 화면 전환을 위한 router
 
-var newsList = []; // 배열 안에 먼저 ul태그 삽입
 
-newsList.push('<ul>'); // NEWS_FEED
+function router() {
+  // hash 알아내기
+  var routePath = location.hash; // routePath가 비어있을 때(hash가 비어있을 때) === 첫 진입
+  // '목록으로' 또한 hash가 비어있기 때문에 newsFeed로 연결됨
+  // location.hash의 값에 #만 존재하면 빈 값으로 처리됨
 
-for (var i = 0; i < 10; i++) {
-  // 목록 UI
-  newsList.push("\n    <li>\n      <a href=\"#".concat(newsFeed[i].id, "\">\n      ").concat(newsFeed[i].title, " ").concat(newsFeed[i].comments_count, "\n      </a>\n    </li>\n  "));
+  if (routePath === '') {
+    // 뉴스 제목 가져오기
+    newsFeed();
+  } else {
+    // 뉴스 글 가져오기
+    newsDetail();
+  }
 }
 
-newsList.push('</ul>'); // 덮어씌우기
+; // window객체
+// hashchange를 화면전환을 위한 트리거로 사용(router를 연결)
 
-container.innerHTML = newsList.join('');
+window.addEventListener('hashchange', router);
+router();
 },{}],"../../AppData/Roaming/npm/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';

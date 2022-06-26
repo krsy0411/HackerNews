@@ -15,35 +15,16 @@ function getData(url) {
   return JSON.parse(ajax.response);
 }
 
-const newsFeed = getData(NEWS_URL);
-const ul = document.createElement('ul');
-
-// window객체
-// NEWS_CONTENT
-window.addEventListener('hashchange', function() {
-  // hash를 알아내기(맨 앞의 #제거버젼)
-  const id = location.hash.substring(1);
-
-  // content_url 변수에 있는 @id(임시)를 알아낸 id값으로 대체
-  const newsContent = getData(CONTENT_URL.replace('@id', id));
-  const title = document.createElement('h1');
-
-  // 글 내용 UI
-  container.innerHTML = `
-  <h1>${newsContent.title}</h1>
-
-  <div>
-    <a href="#">목록으로</a>
-  </div>
-  `;
-});
-
+// 뉴스 제목
+function newsFeed() {
 // ul 태그 안 쪽에 li a 태그를 10묶음 처리 해야하기 때문에 배열 이용
 const newsList = [];
+
+const newsFeed = getData(NEWS_URL);
+
 // 배열 안에 먼저 ul태그 삽입
 newsList.push('<ul>');
 
-// NEWS_FEED
 for(let i = 0; i < 10; i++) {
   // 목록 UI
   newsList.push(`
@@ -58,3 +39,46 @@ for(let i = 0; i < 10; i++) {
 newsList.push('</ul>');
 // 덮어씌우기
 container.innerHTML = newsList.join('');
+};
+
+// 뉴스 내용
+function newsDetail() {
+  // hash를 알아내기(맨 앞의 #제거버젼)
+  const id = location.hash.substring(1);
+  
+  // content_url 변수에 있는 @id(임시)를 알아낸 id값으로 대체
+  const newsContent = getData(CONTENT_URL.replace('@id', id));
+  const title = document.createElement('h1');
+  
+  // 글 내용 UI
+  container.innerHTML = `
+  <h1>${newsContent.title}</h1>
+  
+  <div>
+    <a href="#">목록으로</a>
+  </div>
+  `;
+}
+
+// 화면 전환을 위한 router
+function router() {
+  // hash 알아내기
+  const routePath = location.hash;
+
+  // routePath가 비어있을 때(hash가 비어있을 때) === 첫 진입
+  // '목록으로' 또한 hash가 비어있기 때문에 newsFeed로 연결됨
+  // location.hash의 값에 #만 존재하면 빈 값으로 처리됨
+  if(routePath === '') {
+    // 뉴스 제목 가져오기
+    newsFeed();
+  } else {
+    // 뉴스 글 가져오기
+    newsDetail();
+  }
+};
+
+// window객체
+// hashchange를 화면전환을 위한 트리거로 사용(router를 연결)
+window.addEventListener('hashchange', router);
+
+router();
