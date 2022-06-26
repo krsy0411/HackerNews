@@ -122,21 +122,26 @@ var container = document.getElementById('root');
 var ajax = new XMLHttpRequest();
 var content = document.createElement('div');
 var NEWS_URL = 'https://api.hnpwa.com/v0/news/1.json';
-var CONTENT_URL = 'https://api.hnpwa.com/v0/item/@id.json'; // 긁어올 페이지를 오픈
+var CONTENT_URL = 'https://api.hnpwa.com/v0/item/@id.json'; // ajax 동작 수행처리 함수
 
-ajax.open('GET', NEWS_URL, false); // 데이터를 전송
+function getData(url) {
+  // 긁어올 페이지를 오픈
+  ajax.open('GET', url, false); // 데이터를 전송
 
-ajax.send();
-var newsFeed = JSON.parse(ajax.response);
+  ajax.send(); // 함수처리의 결과물을 반환
+
+  return JSON.parse(ajax.response);
+}
+
+var newsFeed = getData(NEWS_URL);
 var ul = document.createElement('ul'); // window객체
 // NEWS_CONTENT
 
 window.addEventListener('hashchange', function () {
   // hash를 알아내기(맨 앞의 #제거버젼)
-  var id = location.hash.substring(1);
-  ajax.open('GET', CONTENT_URL.replace('@id', id), false);
-  ajax.send();
-  var newsContent = JSON.parse(ajax.response);
+  var id = location.hash.substring(1); // content_url 변수에 있는 @id(임시)를 알아낸 id값으로 대체
+
+  var newsContent = getData(CONTENT_URL.replace('@id', id));
   var title = document.createElement('h1');
   title.innerHTML = newsContent.title;
   content.appendChild(title);
@@ -147,9 +152,11 @@ for (var i = 0; i < 10; i++) {
   // li는 항상 새로 만들어져야 하므로(덮어씌우기X) 반복문 안 쪽에서 객체 생성
   var div = document.createElement('div');
   var li = document.createElement('li');
-  var a = document.createElement('a'); // innerHTML 속성을 제공할 DOM
+  var a = document.createElement('a'); // 문자열을 활용 - html 구조 작성(DOM작성)
 
-  div.innerHTML = "\n    <li>\n      <a href=\"#".concat(newsFeed[i].id, "\">\n      ").concat(newsFeed[i].title, " ").concat(newsFeed[i].comments_count, "\n      </a>\n    </li>\n  ");
+  div.innerHTML = "\n    <li>\n      <a href=\"#".concat(newsFeed[i].id, "\">\n      ").concat(newsFeed[i].title, " ").concat(newsFeed[i].comments_count, "\n      </a>\n    </li>\n  "); // div ul li 순서
+  // ul의 자식요소로 div의 첫번째 자식요소(li)
+
   ul.appendChild(div.firstElementChild);
 } // 출력 부분
 
@@ -184,7 +191,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58042" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54825" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
