@@ -23,10 +23,19 @@ function newsFeed() {
 const newsFeed = getData(NEWS_URL);
 // ul 태그 안 쪽에 li a 태그를 10묶음 처리 해야하기 때문에 배열 이용
 const newsList = [];
-
-
-// 배열 안에 먼저 ul태그 삽입
-newsList.push('<ul>');
+// 템플릿
+let template = `
+  <div class="container mx-auto p-4">
+    <h1>Hacker News</h1>
+    <ul>
+      {{__news_feed__}}
+    </ul>
+    <div>
+      <a href="#/page/{{__prev_page__}}">이전 페이지</a>
+      <a href="#/page/{{__next_page__}}">다음 페이지</a>
+    </div>
+  </div>
+`;
 
 for(let i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
   // 목록 UI
@@ -38,18 +47,14 @@ for(let i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
     </li>
   `);
 }
-newsList.push('</ul>');
 
-// 네비게이션 ui
-newsList.push(`
-  <div>
-    <a href="#/page/${store.currentPage - 1}">이전 페이지</a>
-    <a href="#/page/${store.currentPage + 1}">다음 페이지</a>
-  </div>
-`);
+// 템플릿 안에 마킹해놓은 자리에 for문으로 만들어진 코드를 집어넣기
+template = template.replace('{{__news_feed__}}', newsList.join(''));
+template = template.replace('{{__prev_page__}}', store.currentPage > 1 ? store.currentPage - 1 : 1);
+template = template.replace('{{__next_page__}}', store.currentPage + 1);
 
 // 덮어씌우기
-container.innerHTML = newsList.join('');
+container.innerHTML = template;
 };
 
 
