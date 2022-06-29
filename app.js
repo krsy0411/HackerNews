@@ -3,6 +3,9 @@ const ajax = new XMLHttpRequest();
 const content = document.createElement('div');
 const NEWS_URL = 'https://api.hnpwa.com/v0/news/1.json';
 const CONTENT_URL = 'https://api.hnpwa.com/v0/item/@id.json';
+const store = {
+  currentPage: 1,
+};
 
 // ajax 동작 수행처리 함수
 function getData(url) {
@@ -25,21 +28,32 @@ const newsFeed = getData(NEWS_URL);
 // 배열 안에 먼저 ul태그 삽입
 newsList.push('<ul>');
 
-for(let i = 0; i < 10; i++) {
+for(let i = (store.currentPage - 1) * 10; i < currentPage * 10; i++) {
   // 목록 UI
   newsList.push(`
     <li>
-      <a href="#${newsFeed[i].id}">
+      <a href="#/show/${newsFeed[i].id}">
       ${newsFeed[i].title} ${newsFeed[i].comments_count}
       </a>
     </li>
   `);
 }
+// 네비게이션 ui
+newsList.push(`
+  <div>
+    <a href="#/page/${store.currentPage - 1}">이전 페이지</a>
+    <a href="#/page/${store.currentPage + 1}">다음 페이지</a>
+  </div>
+`);
 
 newsList.push('</ul>');
 // 덮어씌우기
 container.innerHTML = newsList.join('');
 };
+
+
+
+
 
 // 뉴스 내용
 function newsDetail() {
@@ -68,8 +82,12 @@ function router() {
   // routePath가 비어있을 때(hash가 비어있을 때) === 첫 진입
   // '목록으로' 또한 hash가 비어있기 때문에 newsFeed로 연결됨
   // location.hash의 값에 #만 존재하면 빈 값으로 처리됨
-  if(routePath === '') {
+  if (routePath === '') {
     // 뉴스 제목 가져오기
+    newsFeed();
+    // 해당 문자열이 있으면 0이상의 위치값, 없으면 -1 반환
+  } else if (routePath.indexOf('#/page/') >= 0) { 
+    store.currentPage = Number(routePath.substring(7));
     newsFeed();
   } else {
     // 뉴스 글 가져오기

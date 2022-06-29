@@ -122,7 +122,10 @@ var container = document.getElementById('root');
 var ajax = new XMLHttpRequest();
 var content = document.createElement('div');
 var NEWS_URL = 'https://api.hnpwa.com/v0/news/1.json';
-var CONTENT_URL = 'https://api.hnpwa.com/v0/item/@id.json'; // ajax 동작 수행처리 함수
+var CONTENT_URL = 'https://api.hnpwa.com/v0/item/@id.json';
+var store = {
+  currentPage: 1
+}; // ajax 동작 수행처리 함수
 
 function getData(url) {
   // 긁어올 페이지를 오픈
@@ -141,11 +144,13 @@ function newsFeed() {
 
   newsList.push('<ul>');
 
-  for (var i = 0; i < 10; i++) {
+  for (var i = (store.currentPage - 1) * 10; i < currentPage * 10; i++) {
     // 목록 UI
-    newsList.push("\n    <li>\n      <a href=\"#".concat(newsFeed[i].id, "\">\n      ").concat(newsFeed[i].title, " ").concat(newsFeed[i].comments_count, "\n      </a>\n    </li>\n  "));
-  }
+    newsList.push("\n    <li>\n      <a href=\"#/show/".concat(newsFeed[i].id, "\">\n      ").concat(newsFeed[i].title, " ").concat(newsFeed[i].comments_count, "\n      </a>\n    </li>\n  "));
+  } // 네비게이션 ui
 
+
+  newsList.push("\n  <div>\n    <a href=\"#/page/".concat(store.currentPage - 1, "\">\uC774\uC804 \uD398\uC774\uC9C0</a>\n    <a href=\"#/page/").concat(store.currentPage + 1, "\">\uB2E4\uC74C \uD398\uC774\uC9C0</a>\n  </div>\n"));
   newsList.push('</ul>'); // 덮어씌우기
 
   container.innerHTML = newsList.join('');
@@ -172,6 +177,9 @@ function router() {
 
   if (routePath === '') {
     // 뉴스 제목 가져오기
+    newsFeed(); // 해당 문자열이 있으면 0이상의 위치값, 없으면 -1 반환
+  } else if (routePath.indexOf('#/page/') >= 0) {
+    store.currentPage = Number(routePath.substring(7));
     newsFeed();
   } else {
     // 뉴스 글 가져오기
@@ -212,7 +220,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54825" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58845" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
