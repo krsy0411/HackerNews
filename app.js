@@ -20,24 +20,26 @@ function getData(url) {
 
 // 뉴스 제목
 function newsFeed() {
+const newsFeed = getData(NEWS_URL);
 // ul 태그 안 쪽에 li a 태그를 10묶음 처리 해야하기 때문에 배열 이용
 const newsList = [];
 
-const newsFeed = getData(NEWS_URL);
 
 // 배열 안에 먼저 ul태그 삽입
 newsList.push('<ul>');
 
-for(let i = (store.currentPage - 1) * 10; i < currentPage * 10; i++) {
+for(let i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
   // 목록 UI
   newsList.push(`
     <li>
       <a href="#/show/${newsFeed[i].id}">
-      ${newsFeed[i].title} ${newsFeed[i].comments_count}
+      ${newsFeed[i].title} (${newsFeed[i].comments_count})
       </a>
     </li>
   `);
 }
+newsList.push('</ul>');
+
 // 네비게이션 ui
 newsList.push(`
   <div>
@@ -46,7 +48,6 @@ newsList.push(`
   </div>
 `);
 
-newsList.push('</ul>');
 // 덮어씌우기
 container.innerHTML = newsList.join('');
 };
@@ -58,7 +59,7 @@ container.innerHTML = newsList.join('');
 // 뉴스 내용
 function newsDetail() {
   // hash를 알아내기(맨 앞의 #제거버젼)
-  const id = location.hash.substring(1);
+  const id = location.hash.substring(7);
   
   // content_url 변수에 있는 @id(임시)를 알아낸 id값으로 대체
   const newsContent = getData(CONTENT_URL.replace('@id', id));
@@ -69,7 +70,7 @@ function newsDetail() {
   <h1>${newsContent.title}</h1>
   
   <div>
-    <a href="#">목록으로</a>
+    <a href="#/page/${store.currentPage}">목록으로</a>
   </div>
   `;
 }

@@ -138,20 +138,20 @@ function getData(url) {
 
 
 function newsFeed() {
-  // ul 태그 안 쪽에 li a 태그를 10묶음 처리 해야하기 때문에 배열 이용
-  var newsList = [];
-  var newsFeed = getData(NEWS_URL); // 배열 안에 먼저 ul태그 삽입
+  var newsFeed = getData(NEWS_URL); // ul 태그 안 쪽에 li a 태그를 10묶음 처리 해야하기 때문에 배열 이용
+
+  var newsList = []; // 배열 안에 먼저 ul태그 삽입
 
   newsList.push('<ul>');
 
-  for (var i = (store.currentPage - 1) * 10; i < currentPage * 10; i++) {
+  for (var i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
     // 목록 UI
-    newsList.push("\n    <li>\n      <a href=\"#/show/".concat(newsFeed[i].id, "\">\n      ").concat(newsFeed[i].title, " ").concat(newsFeed[i].comments_count, "\n      </a>\n    </li>\n  "));
-  } // 네비게이션 ui
+    newsList.push("\n    <li>\n      <a href=\"#/show/".concat(newsFeed[i].id, "\">\n      ").concat(newsFeed[i].title, " (").concat(newsFeed[i].comments_count, ")\n      </a>\n    </li>\n  "));
+  }
 
+  newsList.push('</ul>'); // 네비게이션 ui
 
-  newsList.push("\n  <div>\n    <a href=\"#/page/".concat(store.currentPage - 1, "\">\uC774\uC804 \uD398\uC774\uC9C0</a>\n    <a href=\"#/page/").concat(store.currentPage + 1, "\">\uB2E4\uC74C \uD398\uC774\uC9C0</a>\n  </div>\n"));
-  newsList.push('</ul>'); // 덮어씌우기
+  newsList.push("\n  <div>\n    <a href=\"#/page/".concat(store.currentPage - 1, "\">\uC774\uC804 \uD398\uC774\uC9C0</a>\n    <a href=\"#/page/").concat(store.currentPage + 1, "\">\uB2E4\uC74C \uD398\uC774\uC9C0</a>\n  </div>\n")); // 덮어씌우기
 
   container.innerHTML = newsList.join('');
 }
@@ -160,12 +160,12 @@ function newsFeed() {
 
 function newsDetail() {
   // hash를 알아내기(맨 앞의 #제거버젼)
-  var id = location.hash.substring(1); // content_url 변수에 있는 @id(임시)를 알아낸 id값으로 대체
+  var id = location.hash.substring(7); // content_url 변수에 있는 @id(임시)를 알아낸 id값으로 대체
 
   var newsContent = getData(CONTENT_URL.replace('@id', id));
   var title = document.createElement('h1'); // 글 내용 UI
 
-  container.innerHTML = "\n  <h1>".concat(newsContent.title, "</h1>\n  \n  <div>\n    <a href=\"#\">\uBAA9\uB85D\uC73C\uB85C</a>\n  </div>\n  ");
+  container.innerHTML = "\n  <h1>".concat(newsContent.title, "</h1>\n  \n  <div>\n    <a href=\"#/page/").concat(store.currentPage, "\">\uBAA9\uB85D\uC73C\uB85C</a>\n  </div>\n  ");
 } // 화면 전환을 위한 router
 
 
@@ -220,7 +220,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58845" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52687" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
