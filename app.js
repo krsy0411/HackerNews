@@ -5,6 +5,7 @@ const NEWS_URL = 'https://api.hnpwa.com/v0/news/1.json';
 const CONTENT_URL = 'https://api.hnpwa.com/v0/item/@id.json';
 const store = {
   currentPage: 1,
+  feeds: [],
 };
 
 // ajax 동작 수행처리 함수
@@ -17,10 +18,19 @@ function getData(url) {
   // 함수처리의 결과물을 반환
   return JSON.parse(ajax.response);
 }
+// 읽음처리 로직
+function makeFeeds(feeds) {
+  for (let i = 0; i < feeds.length; i++) {
+    feeds[i].read = false;
+  }
+
+  return feeds;
+}
 
 // 뉴스 제목
 function newsFeed() {
-const newsFeed = getData(NEWS_URL);
+  // 매번 페이지 전체 글들을 긁어오는것은 비효율적이므로, 읽은 글은 읽었다고 처리하고 저장하도록
+let newsFeed = store.feeds;
 // ul 태그 안 쪽에 li a 태그를 10묶음 처리 해야하기 때문에 배열 이용
 const newsList = [];
 // 템플릿
@@ -49,8 +59,14 @@ let template = `
   </div>
 `;
 
+// 최초실행시, news_url의 데이터를 가져옴
+if (newsFeed.length === 0) {
+  newsFeed = store.feeds = makeFeeds(getData(NEWS_URL));
+}
+
 for(let i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
   // 목록 UI
+  // 읽은 적이 있으면, 배경이 빨강색으로 처리되도록
   newsList.push(`
     <div class="p-6 ${newsFeed[i].read ? 'bg-red-500' : 'bg-white'} mt-6 rounded-lg shadow-md transition-colors duration-500 hover:bg-green-100">
     <div class="flex">
@@ -121,6 +137,14 @@ function newsDetail() {
       </div>
     </div>
   `;
+
+  // read 내용을 true처리하도록
+  for (let i = 0; i < store.feeds.length; i++) {
+    if (store.feeds[i].id === Number(id)) {
+      store.feeds[i].read = true;
+      break;
+    }
+  }
 
   function makeComment(comments, called = 0) {
     // 댓글을 배열을 이용해서 담기
