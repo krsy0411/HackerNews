@@ -1,9 +1,29 @@
-const container = document.getElementById('root');
-const ajax = new XMLHttpRequest();
+
+type Store = {
+  currentPage: number;
+  // 타입을 정의한 newsfeed를 배열에 사용
+  feeds: NewsFeed[];
+}
+// 배열 안에 들어가는 데이터들의 타입 결정
+type NewsFeed = {
+  id: number;
+  comments_count: number,
+  url: string;
+  user: string;
+  time_ago: string;
+  points: number;
+  title: string;
+  read?: boolean;
+}
+
+
+
+const container: HTMLElement | null = document.getElementById('root');
+const ajax: XMLHttpRequest = new XMLHttpRequest();
 const content = document.createElement('div');
 const NEWS_URL = 'https://api.hnpwa.com/v0/news/1.json';
 const CONTENT_URL = 'https://api.hnpwa.com/v0/item/@id.json';
-const store = {
+const store: Store = {
   currentPage: 1,
   feeds: [],
 };
@@ -30,7 +50,7 @@ function makeFeeds(feeds) {
 // 뉴스 제목
 function newsFeed() {
   // 매번 페이지 전체 글들을 긁어오는것은 비효율적이므로, 읽은 글은 읽었다고 처리하고 저장하도록
-let newsFeed = store.feeds;
+let newsFeed: NewsFeed[] = store.feeds;
 // ul 태그 안 쪽에 li a 태그를 10묶음 처리 해야하기 때문에 배열 이용
 const newsList = [];
 // 템플릿
@@ -94,8 +114,13 @@ template = template.replace('{{__prev_page__}}', store.currentPage > 1 ? store.c
 template = template.replace('{{__next_page__}}', store.currentPage + 1);
 
 // 덮어씌우기
-container.innerHTML = template;
-};
+// container안에 데이터가 없어서 null이 된다면 false로 인식하므로 if(container에 데이터가 있으면) {}
+if(container) {
+  container.innerHTML = template;
+  } else {
+  console.error('최상위 컨테이너가 없어 UI를 진행하지 못합니다.');
+  }
+}
 
 
 
@@ -176,7 +201,12 @@ function newsDetail() {
 
   // 글 내용 UI
   // comments부분 인자로 newscontent의 comments 속성 사용
-  container.innerHTML = template.replace('{{__comments__}}', makeComment(newsContent.comments));
+  // container안에 데이터가 없어서 null이 된다면 false로 인식하므로 if(container에 데이터가 있으면) {}
+  if (container) {
+    container.innerHTML = template.replace('{{__comments__}}', makeComment(newsContent.comments));
+  } else {
+    console.error('최상위 컨테이너가 없어 UI를 진행하지 못합니다.');
+  }
 }
 
 // 화면 전환을 위한 router
