@@ -146,6 +146,14 @@ function makeFeeds(feeds) {
   }
 
   return feeds;
+}
+
+function updateView(html) {
+  if (container) {
+    container.innerHTML = html;
+  } else {
+    console.error('최상위 컨테이너가 없어 UI를 진행하지 못합니다.');
+  }
 } // 뉴스 제목
 
 
@@ -173,11 +181,7 @@ function newsFeed() {
   template = template.replace('{{__next_page__}}', store.currentPage + 1); // 덮어씌우기
   // container안에 데이터가 없어서 null이 된다면 false로 인식하므로 if(container에 데이터가 있으면) {}
 
-  if (container) {
-    container.innerHTML = template;
-  } else {
-    console.error('최상위 컨테이너가 없어 UI를 진행하지 못합니다.');
-  }
+  updateView(template);
 } // 뉴스 내용
 
 
@@ -217,16 +221,9 @@ function newsDetail() {
 
 
     return commentString.join('');
-  } // 글 내용 UI
-  // comments부분 인자로 newscontent의 comments 속성 사용
-  // container안에 데이터가 없어서 null이 된다면 false로 인식하므로 if(container에 데이터가 있으면) {}
-
-
-  if (container) {
-    container.innerHTML = template.replace('{{__comments__}}', makeComment(newsContent.comments));
-  } else {
-    console.error('최상위 컨테이너가 없어 UI를 진행하지 못합니다.');
   }
+
+  updateView(template);
 } // 화면 전환을 위한 router
 
 

@@ -1,22 +1,35 @@
-
+// 타입 알리아스
 type Store = {
   currentPage: number;
   // 타입을 정의한 newsfeed를 배열에 사용
   feeds: NewsFeed[];
 }
-// 배열 안에 들어가는 데이터들의 타입 결정
-type NewsFeed = {
+
+// 인터섹션
+type News = {
   id: number;
-  comments_count: number,
+  time_ago: string;
   url: string;
   user: string;
-  time_ago: string;
-  points: number;
+  content: string;
   title: string;
+}
+
+// 배열 안에 들어가는 데이터들의 타입 결정
+type NewsFeed = News & {
+  comments_count: number,
+  points: number;
   read?: boolean;
 }
 
+type newsDetail = News & {
+  comments: newsComment[];
+}
 
+type newsComment = News & {
+  comments: newsComment[];
+  level: number;
+}
 
 const container: HTMLElement | null = document.getElementById('root');
 const ajax: XMLHttpRequest = new XMLHttpRequest();
@@ -29,7 +42,8 @@ const store: Store = {
 };
 
 // ajax 동작 수행처리 함수
-function getData(url) {
+// 제네릭
+function getData<AjaxResponse>(url: string): AjaxResponse {
   // 긁어올 페이지를 오픈
   ajax.open('GET', url, false);
   // 데이터를 전송
@@ -38,8 +52,9 @@ function getData(url) {
   // 함수처리의 결과물을 반환
   return JSON.parse(ajax.response);
 }
+
 // 읽음처리 로직
-function makeFeeds(feeds) {
+function makeFeeds(feeds: NewsFeed[]): NewsFeed[] {
   for (let i = 0; i < feeds.length; i++) {
     feeds[i].read = false;
   }
@@ -47,8 +62,17 @@ function makeFeeds(feeds) {
   return feeds;
 }
 
+function updateView(html: string): void {
+  if(container) {
+    container.innerHTML = html;
+    } else {
+    console.error('최상위 컨테이너가 없어 UI를 진행하지 못합니다.');
+    }
+  }
+
+
 // 뉴스 제목
-function newsFeed() {
+function newsFeed(): void {
   // 매번 페이지 전체 글들을 긁어오는것은 비효율적이므로, 읽은 글은 읽었다고 처리하고 저장하도록
 let newsFeed: NewsFeed[] = store.feeds;
 // ul 태그 안 쪽에 li a 태그를 10묶음 처리 해야하기 때문에 배열 이용
@@ -80,8 +104,9 @@ let template = `
 `;
 
 // 최초실행시, news_url의 데이터를 가져옴
+// 제네릭
 if (newsFeed.length === 0) {
-  newsFeed = store.feeds = makeFeeds(getData(NEWS_URL));
+  newsFeed = store.feeds = makeFeeds(getData<NewsFeed[]>(NEWS_URL));
 }
 
 for(let i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
@@ -108,18 +133,14 @@ for(let i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
   `);
 }
 
-// 템플릿 안에 마킹해놓은 자리에 for문으로 만들어진 코드를 집어넣기
-template = template.replace('{{__news_feed__}}', newsList.join(''));
-template = template.replace('{{__prev_page__}}', store.currentPage > 1 ? store.currentPage - 1 : 1);
-template = template.replace('{{__next_page__}}', store.currentPage + 1);
+  // 템플릿 안에 마킹해놓은 자리에 for문으로 만들어진 코드를 집어넣기
+  template = template.replace('{{__news_feed__}}', newsList.join(''));
+  template = template.replace('{{__prev_page__}}', String(store.currentPage > 1 ? store.currentPage - 1 : 1));
+  template = template.replace('{{__next_page__}}', String(store.currentPage + 1));
 
-// 덮어씌우기
-// container안에 데이터가 없어서 null이 된다면 false로 인식하므로 if(container에 데이터가 있으면) {}
-if(container) {
-  container.innerHTML = template;
-  } else {
-  console.error('최상위 컨테이너가 없어 UI를 진행하지 못합니다.');
-  }
+  // 덮어씌우기
+  // container안에 데이터가 없어서 null이 된다면 false로 인식하므로 if(container에 데이터가 있으면) {}
+  updateView(template);
 }
 
 
@@ -132,7 +153,7 @@ function newsDetail() {
   const id = location.hash.substring(7);
   
   // content_url 변수에 있는 @id(임시)를 알아낸 id값으로 대체
-  const newsContent = getData(CONTENT_URL.replace('@id', id));
+  const newsContent = getData<newsDetail>(CONTENT_URL.replace('@id', id));
   const title = document.createElement('h1');
   let template = `
     <div class="bg-gray-600 min-h-screen pb-8">
@@ -171,46 +192,43 @@ function newsDetail() {
     }
   }
 
-  function makeComment(comments, called = 0) {
-    // 댓글을 배열을 이용해서 담기
-    const commentString = [];
-
-    for (let i = 0; i < comments.length; i++) {
-      // 배열에 html형식으로 작성
-      // 댓글에 댓글이 달릴때마다 indent 공간이 커지도록
-      commentString.push(`
-        <div style="padding-left: ${called * 40}px;" class="mt-4">
-          <div class="text-gray-400">
-            <i class="fa fa-sort-up mr-2"></i>
-            <strong>${comments[i].user}</strong> ${comments[i].time_ago}
-          </div>
-          <p class="text-gray-700">${comments[i].content}</p>
-        </div>   
-      `);
-
-      // 대댓글 내용들을 재귀함수 형태로 push
-      // i번째 대댓글의 댓글이 존재하면
-      if (comments[i].comments.length > 0) {
-        commentString.push(makeComment(comments[i].comments, called + 1));
-      }
-    }
-
-    // push 내용을 하나의 문자열로 집어넣기
-    return commentString.join('');
-  }
-
-  // 글 내용 UI
-  // comments부분 인자로 newscontent의 comments 속성 사용
-  // container안에 데이터가 없어서 null이 된다면 false로 인식하므로 if(container에 데이터가 있으면) {}
-  if (container) {
-    container.innerHTML = template.replace('{{__comments__}}', makeComment(newsContent.comments));
-  } else {
-    console.error('최상위 컨테이너가 없어 UI를 진행하지 못합니다.');
-  }
+  updateView(template);
 }
 
+// 댓글기능
+function makeComment(comments: newsComment[]): string {
+  // 댓글을 배열을 이용해서 담기
+  const commentString = [];
+
+  for (let i = 0; i < comments.length; i++) {
+    const comment: newsComment = comments[i];
+
+    // 배열에 html형식으로 작성
+    // 댓글에 댓글이 달릴때마다 indent 공간이 커지도록
+    commentString.push(`
+      <div style="padding-left: ${comment.level * 40}px;" class="mt-4">
+        <div class="text-gray-400">
+          <i class="fa fa-sort-up mr-2"></i>
+          <strong>${comment.user}</strong> ${comment.time_ago}
+        </div>
+        <p class="text-gray-700">${comment.content}</p>
+      </div>   
+    `);
+
+    // 대댓글 내용들을 재귀함수 형태로 push
+    // i번째 대댓글의 댓글이 존재하면
+    if (comment.comments.length > 0) {
+      commentString.push(makeComment(comment.comments));
+    }
+  }
+
+  // push 내용을 하나의 문자열로 집어넣기
+  return commentString.join('');
+}
+
+
 // 화면 전환을 위한 router
-function router() {
+function router(): void {
   // hash 알아내기
   const routePath = location.hash;
 
