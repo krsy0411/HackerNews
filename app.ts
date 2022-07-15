@@ -1,7 +1,7 @@
 interface Store {
-  currentPage: number;
   // 타입을 정의한 newsfeed를 배열에 사용
   feeds: NewsFeed[];
+  currentPage: number;
 }
 
 interface News {
@@ -91,20 +91,17 @@ class Api {
   }
 }
 
-class NewsFeedApi {
+class NewsFeedApi extends Api {
   getData(): NewsFeed[] {
     return this.getRequest<NewsFeed[]>();
   }
 }
 
-class NewsDetailApi {
+class NewsDetailApi extends Api {
   getData(): NewsDetail {
     return this.getRequest<NewsDetail>();
   }
 }
-
-interface NewsFeedApi extends Api {};
-interface NewsDetailApi extends Api {};
 
 applyApiMixins(NewsFeedApi, [Api]);
 applyApiMixins(NewsDetailApi, [Api]);
@@ -117,11 +114,11 @@ applyApiMixins(NewsDetailApi, [Api]);
 
 
 abstract class View {
-  template: string;
+  private template: string;
   // replace의 대상이 되는 템플릿
-  renderTemplate: string;
-  container: HTMLElement;
-  htmlList: string[];
+  private renderTemplate: string;
+  private container: HTMLElement;
+  private htmlList: string[];
 
   constructor(containerId: string, template: string) {
     const containerElement = document.getElementById(containerId);
@@ -138,26 +135,26 @@ abstract class View {
     this.htmlList = [];
   }
 
-  updateView(): void {
+  protected updateView(): void {
       this.container.innerHTML = this.renderTemplate;
       this.renderTemplate = this.template;
     }
   
-  addHtml(htmlString: string): void {
+  protected addHtml(htmlString: string): void {
     this.htmlList.push(htmlString);
   }
   
-  getHtml(): string {
+  protected getHtml(): string {
     const snapshot = this.htmlList.join('');
     this.clearHtmlList();
     return snapshot;
   }
 
-  setTemplateData(key: string, value: string): void {
+  protected setTemplateData(key: string, value: string): void {
     this.renderTemplate = this.renderTemplate.replace(`{{__${key}__}}`, value);
   }
 
-  clearHtmlList(): void {
+  private clearHtmlList(): void {
     this.htmlList = [];
   }
 
@@ -223,8 +220,8 @@ class Router {
 
 
 class NewsFeedView extends View {
-  api: NewsFeedApi;
-  feeds: NewsFeed[];
+  private api: NewsFeedApi;
+  private feeds: NewsFeed[];
 
   constructor(containerId: string) {
     let template = `
@@ -254,7 +251,7 @@ class NewsFeedView extends View {
     
     super(containerId, template);
 
-    this.api = new NewsFeedApi();
+    this.api = new NewsFeedApi(NEWS_URL);
     // 매번 페이지 전체 글들을 긁어오는것은 비효율적이므로, 읽은 글은 읽었다고 처리하고 저장하도록
     this.feeds = store.feeds;
 
@@ -268,7 +265,8 @@ class NewsFeedView extends View {
   }
 
   render(): void {
-    store.currentPage = Number(location.hash.substring(7));
+    // 1페이지가 디폴트 페이지
+    store.currentPage = Number(location.hash.substring(7) || 1);
       for(let i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
         const {id, title, comments_count, user, points, time_ago, read} = this.feeds[i];
         // 목록 UI
@@ -374,7 +372,7 @@ class NewsDetailView extends View {
   
 
   // 댓글기능
-  makeComment(comments: NewsComment[]): string {
+  private makeComment(comments: NewsComment[]): string {
     for (let i = 0; i < comments.length; i++) {
       const comment: NewsComment = comments[i];
 
