@@ -29,6 +29,11 @@ interface NewsComment extends News {
   readonly level: number;
 }
 
+interface RouteInfo {
+  path: string;
+  page: View;
+}
+
 const container: HTMLElement | null = document.getElementById('root');
 const NEWS_URL = 'https://api.hnpwa.com/v0/news/1.json';
 const CONTENT_URL = 'https://api.hnpwa.com/v0/item/@id.json';
@@ -36,6 +41,13 @@ const store: Store = {
   currentPage: 1,
   feeds: [],
 };
+
+
+
+
+
+
+
 
 // 믹스인 상속 코드
 // targetClass로 제공된 class에 baseClasses로 제공된 n개의 class의 기능들을 합성시키는 코드
@@ -51,28 +63,43 @@ function applyApiMixins(targetClass: any, baseClasses:any[]): void {
   })
 }
 
+
+
+
+
+
+
+
+
 class Api {
-  getRequest<AjaxResponse>(url: string): AjaxResponse {
-    const ajax = new XMLHttpRequest();
+  ajax: XMLHttpRequest;
+  url:string;
+
+  constructor(url: string) {
+    this.ajax = new XMLHttpRequest();
+    this.url = url;
+  }
+
+  getRequest<AjaxResponse>(): AjaxResponse {
     // 긁어올 페이지를 오픈
-    ajax.open('GET', url, false);
+    this.ajax.open('GET', this.url, false);
     // 데이터를 전송
-    ajax.send();
+    this.ajax.send();
 
     // 함수처리의 결과물을 반환
-    return JSON.parse(ajax.response);   
+    return JSON.parse(this.ajax.response);   
   }
 }
 
 class NewsFeedApi {
   getData(): NewsFeed[] {
-    return this.getRequest<NewsFeed[]>(NEWS_URL);
+    return this.getRequest<NewsFeed[]>();
   }
 }
 
 class NewsDetailApi {
-  getData(id: string): NewsDetail {
-    return this.getRequest<NewsDetail>(CONTENT_URL.replace('@id', id));
+  getData(): NewsDetail {
+    return this.getRequest<NewsDetail>();
   }
 }
 
@@ -89,8 +116,9 @@ applyApiMixins(NewsDetailApi, [Api]);
 
 
 
-class View {
+abstract class View {
   template: string;
+  // replace의 대상이 되는 템플릿
   renderTemplate: string;
   container: HTMLElement;
   htmlList: string[];
@@ -106,12 +134,13 @@ class View {
     // 초기화
     this.container = containerElement;
     this.template = template;
-    this.renderTemplate: template;
+    this.renderTemplate = template;
     this.htmlList = [];
   }
 
   updateView(): void {
-      this.container.innerHTML = this.template;
+      this.container.innerHTML = this.renderTemplate;
+      this.renderTemplate = this.template;
     }
   
   addHtml(htmlString: string): void {
@@ -119,13 +148,69 @@ class View {
   }
   
   getHtml(): string {
-    return this.htmlList.join('');
+    const snapshot = this.htmlList.join('');
+    this.clearHtmlList();
+    return snapshot;
   }
 
   setTemplateData(key: string, value: string): void {
-    this.template = this.template.replace(`{{__${key}__}}`, value);
+    this.renderTemplate = this.renderTemplate.replace(`{{__${key}__}}`, value);
+  }
+
+  clearHtmlList(): void {
+    this.htmlList = [];
+  }
+
+
+    // 자식 class들에게 render기능을 구현하도록 강제시키기
+    abstract render(): void;
+}
+
+
+
+
+
+
+
+
+class Router {
+  routeTable: RouteInfo[];
+  defaultPage: RouteInfo | null;
+  constructor() {
+    // window객체
+    // hashchange를 화면전환을 위한 트리거로 사용
+    // route메소드를 인자로 연결. Router의 인스턴스로 사용하기 위해 bind로 고정
+    window.addEventListener('hashchange', this.route.bind(this));
+
+    this.routeTable = [];
+    this.defaultPage = null;
+  }
+
+  setDefaultPage(page: View): void {
+    this.defaultPage = { path: '', page };
+  }
+
+  addRoutePath(path:string, page:View): void {
+    this.routeTable.push({path, page});
+  }
+
+  route() {
+    // hash 알아내기
+    const routePath = location.hash;
+    // defaultpage 체크
+    if(routePath === '' && this.defaultPage) {
+      this.defaultPage.page.render();
+    }
+
+    for (const routeInfo of this.routeTable) {
+      if (routePath.indexOf(routeInfo.path) >= 0) {
+        routeInfo.page.render();
+        break;
+      }
+    }
   }
 }
+
 
 
 
@@ -174,9 +259,8 @@ class NewsFeedView extends View {
     this.feeds = store.feeds;
 
     // 최초실행시, news_url의 데이터를 가져옴
-    // 제네릭
     if (this.feeds.length === 0) {
-      this.feeds = store.feeds = this.makeFeeds(this.api.getData());
+      this.feeds = store.feeds = this.api.getData();
       this.makeFeeds();
     }
   
@@ -184,6 +268,7 @@ class NewsFeedView extends View {
   }
 
   render(): void {
+    store.currentPage = Number(location.hash.substring(7));
       for(let i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
         const {id, title, comments_count, user, points, time_ago, read} = this.feeds[i];
         // 목록 UI
@@ -213,13 +298,11 @@ class NewsFeedView extends View {
     this.setTemplateData('news_feed', this.getHtml());
     this.setTemplateData('prev_page', String(store.currentPage > 1 ? store.currentPage - 1 : 1));
     this.setTemplateData('next_page', String(store.currentPage + 1));
-      
-        // 덮어씌우기
-    // container안에 데이터가 없어서 null이 된다면 false로 인식하므로 if(container에 데이터가 있으면) {}
-    updateView(template);
+    
+    this.updateView();
   }
 
-    // 읽음처리 로직
+  // 읽음처리 로직
   makeFeeds(): void {
     for (let i = 0; i < this.feeds.length; i++) {
       this.feeds[i].read = false;
@@ -321,40 +404,13 @@ class NewsDetailView extends View {
 }
 
 
+const router: Router = new Router();
+const newsFeedView = new NewsFeedView('root');
+const newsDetailView = new NewsDetailView('root');
 
+router.setDefaultPage(newsFeedView);
 
-
-
-
-
-
-
-
-
-
-// 화면 전환을 위한 router
-function router(): void {
-  // hash 알아내기
-  const routePath = location.hash;
-
-  // routePath가 비어있을 때(hash가 비어있을 때) === 첫 진입
-  // '목록으로' 또한 hash가 비어있기 때문에 newsFeed로 연결됨
-  // location.hash의 값에 #만 존재하면 빈 값으로 처리됨
-  if (routePath === '') {
-    // 뉴스 제목 가져오기
-    newsFeed();
-    // 해당 문자열이 있으면 0이상의 위치값, 없으면 -1 반환
-  } else if (routePath.indexOf('#/page/') >= 0) { 
-    store.currentPage = Number(routePath.substring(7));
-    newsFeed();
-  } else {
-    // 뉴스 글 가져오기
-    newsDetail();
-  }
-};
-
-// window객체
-// hashchange를 화면전환을 위한 트리거로 사용(router를 연결)
-window.addEventListener('hashchange', router);
-
-router();
+router.addRoutePath('./page', newsFeedView);
+router.addRoutePath('./page', newsDetailView);
+//최초 진입시 라우터 함수 직접 실행(처음엔 혼자 작동하지 X)
+router.route();

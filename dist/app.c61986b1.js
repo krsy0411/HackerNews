@@ -148,6 +148,23 @@ var __extends = this && this.__extends || function () {
   };
 }();
 
+var __values = this && this.__values || function (o) {
+  var s = typeof Symbol === "function" && Symbol.iterator,
+      m = s && o[s],
+      i = 0;
+  if (m) return m.call(o);
+  if (o && typeof o.length === "number") return {
+    next: function next() {
+      if (o && i >= o.length) o = void 0;
+      return {
+        value: o && o[i++],
+        done: !o
+      };
+    }
+  };
+  throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+};
+
 var container = document.getElementById('root');
 var NEWS_URL = 'https://api.hnpwa.com/v0/news/1.json';
 var CONTENT_URL = 'https://api.hnpwa.com/v0/item/@id.json';
@@ -172,16 +189,18 @@ function applyApiMixins(targetClass, baseClasses) {
 var Api =
 /** @class */
 function () {
-  function Api() {}
+  function Api(url) {
+    this.ajax = new XMLHttpRequest();
+    this.url = url;
+  }
 
-  Api.prototype.getRequest = function (url) {
-    var ajax = new XMLHttpRequest(); // 긁어올 페이지를 오픈
+  Api.prototype.getRequest = function () {
+    // 긁어올 페이지를 오픈
+    this.ajax.open('GET', this.url, false); // 데이터를 전송
 
-    ajax.open('GET', url, false); // 데이터를 전송
+    this.ajax.send(); // 함수처리의 결과물을 반환
 
-    ajax.send(); // 함수처리의 결과물을 반환
-
-    return JSON.parse(ajax.response);
+    return JSON.parse(this.ajax.response);
   };
 
   return Api;
@@ -193,7 +212,7 @@ function () {
   function NewsFeedApi() {}
 
   NewsFeedApi.prototype.getData = function () {
-    return this.getRequest(NEWS_URL);
+    return this.getRequest();
   };
 
   return NewsFeedApi;
@@ -204,8 +223,8 @@ var NewsDetailApi =
 function () {
   function NewsDetailApi() {}
 
-  NewsDetailApi.prototype.getData = function (id) {
-    return this.getRequest(CONTENT_URL.replace('@id', id));
+  NewsDetailApi.prototype.getData = function () {
+    return this.getRequest();
   };
 
   return NewsDetailApi;
@@ -229,13 +248,13 @@ function () {
 
     this.container = containerElement;
     this.template = template;
-    this.renderTemplate;
-    template;
+    this.renderTemplate = template;
     this.htmlList = [];
   }
 
   View.prototype.updateView = function () {
-    this.container.innerHTML = this.template;
+    this.container.innerHTML = this.renderTemplate;
+    this.renderTemplate = this.template;
   };
 
   View.prototype.addHtml = function (htmlString) {
@@ -243,14 +262,81 @@ function () {
   };
 
   View.prototype.getHtml = function () {
-    return this.htmlList.join('');
+    var snapshot = this.htmlList.join('');
+    this.clearHtmlList();
+    return snapshot;
   };
 
   View.prototype.setTemplateData = function (key, value) {
-    this.template = this.template.replace("{{__".concat(key, "__}}"), value);
+    this.renderTemplate = this.renderTemplate.replace("{{__".concat(key, "__}}"), value);
+  };
+
+  View.prototype.clearHtmlList = function () {
+    this.htmlList = [];
   };
 
   return View;
+}();
+
+var Router =
+/** @class */
+function () {
+  function Router() {
+    // window객체
+    // hashchange를 화면전환을 위한 트리거로 사용
+    // route메소드를 인자로 연결. Router의 인스턴스로 사용하기 위해 bind로 고정
+    window.addEventListener('hashchange', this.route.bind(this));
+    this.routeTable = [];
+    this.defaultPage = null;
+  }
+
+  Router.prototype.setDefaultPage = function (page) {
+    this.defaultPage = {
+      path: '',
+      page: page
+    };
+  };
+
+  Router.prototype.addRoutePath = function (path, page) {
+    this.routeTable.push({
+      path: path,
+      page: page
+    });
+  };
+
+  Router.prototype.route = function () {
+    var e_1, _a; // hash 알아내기
+
+
+    var routePath = location.hash; // defaultpage 체크
+
+    if (routePath === '' && this.defaultPage) {
+      this.defaultPage.page.render();
+    }
+
+    try {
+      for (var _b = __values(this.routeTable), _c = _b.next(); !_c.done; _c = _b.next()) {
+        var routeInfo = _c.value;
+
+        if (routePath.indexOf(routeInfo.path) >= 0) {
+          routeInfo.page.render();
+          break;
+        }
+      }
+    } catch (e_1_1) {
+      e_1 = {
+        error: e_1_1
+      };
+    } finally {
+      try {
+        if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+      } finally {
+        if (e_1) throw e_1.error;
+      }
+    }
+  };
+
+  return Router;
 }();
 
 var NewsFeedView =
@@ -266,10 +352,9 @@ function (_super) {
     _this.api = new NewsFeedApi(); // 매번 페이지 전체 글들을 긁어오는것은 비효율적이므로, 읽은 글은 읽었다고 처리하고 저장하도록
 
     _this.feeds = store.feeds; // 최초실행시, news_url의 데이터를 가져옴
-    // 제네릭
 
     if (_this.feeds.length === 0) {
-      _this.feeds = store.feeds = _this.makeFeeds(_this.api.getData());
+      _this.feeds = store.feeds = _this.api.getData();
 
       _this.makeFeeds();
     }
@@ -278,6 +363,8 @@ function (_super) {
   }
 
   NewsFeedView.prototype.render = function () {
+    store.currentPage = Number(location.hash.substring(7));
+
     for (var i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
       var _a = this.feeds[i],
           id = _a.id,
@@ -295,10 +382,8 @@ function (_super) {
 
     this.setTemplateData('news_feed', this.getHtml());
     this.setTemplateData('prev_page', String(store.currentPage > 1 ? store.currentPage - 1 : 1));
-    this.setTemplateData('next_page', String(store.currentPage + 1)); // 덮어씌우기
-    // container안에 데이터가 없어서 null이 된다면 false로 인식하므로 if(container에 데이터가 있으면) {}
-
-    updateView(template);
+    this.setTemplateData('next_page', String(store.currentPage + 1));
+    this.updateView();
   }; // 읽음처리 로직
 
 
@@ -359,32 +444,16 @@ function (_super) {
   };
 
   return NewsDetailView;
-}(View); // 화면 전환을 위한 router
+}(View);
 
+var router = new Router();
+var newsFeedView = new NewsFeedView('root');
+var newsDetailView = new NewsDetailView('root');
+router.setDefaultPage(newsFeedView);
+router.addRoutePath('./page', newsFeedView);
+router.addRoutePath('./page', newsDetailView); //최초 진입시 라우터 함수 직접 실행(처음엔 혼자 작동하지 X)
 
-function router() {
-  // hash 알아내기
-  var routePath = location.hash; // routePath가 비어있을 때(hash가 비어있을 때) === 첫 진입
-  // '목록으로' 또한 hash가 비어있기 때문에 newsFeed로 연결됨
-  // location.hash의 값에 #만 존재하면 빈 값으로 처리됨
-
-  if (routePath === '') {
-    // 뉴스 제목 가져오기
-    newsFeed(); // 해당 문자열이 있으면 0이상의 위치값, 없으면 -1 반환
-  } else if (routePath.indexOf('#/page/') >= 0) {
-    store.currentPage = Number(routePath.substring(7));
-    newsFeed();
-  } else {
-    // 뉴스 글 가져오기
-    newsDetail();
-  }
-}
-
-; // window객체
-// hashchange를 화면전환을 위한 트리거로 사용(router를 연결)
-
-window.addEventListener('hashchange', router);
-router();
+router.route();
 },{}],"../../AppData/Roaming/npm/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
@@ -413,7 +482,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61663" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62961" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
