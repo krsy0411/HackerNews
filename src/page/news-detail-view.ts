@@ -35,12 +35,10 @@ const template:string = `
 
 export default class NewsDetailView extends View {
     constructor(containerId: string) {
-  
       super(containerId, template);
     }
   
-    render() {
-      const id = location.hash.substring(7);
+    render = (id:string): void => {
       const api = new NewsDetailApi(CONTENT_URL.replace('@id', id));
       const newsDetail: NewsDetail = api.getData();
   

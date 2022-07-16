@@ -2,8 +2,6 @@ import Router from './core/router';
 import {NewsDetailView, NewsFeedView} from './page';
 import {Store} from './types'
 
-// const container: HTMLElement | null = document.getElementById('root');
-
 const store: Store = {
   currentPage: 1,
   feeds: [],
@@ -26,4 +24,4 @@ router.setDefaultPage(newsFeedView);
 router.addRoutePath('./page', newsFeedView);
 router.addRoutePath('./page', newsDetailView);
 //최초 진입시 라우터 함수 직접 실행(처음엔 혼자 작동하지 X)
-router.route();
+router.go();

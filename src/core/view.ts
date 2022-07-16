@@ -6,7 +6,7 @@ export default abstract class View {
     private htmlList: string[];
   
     constructor(containerId: string, template: string) {
-      const containerElement = document.getElementById(containerId);
+      const containerElement: HTMLElement | null = document.getElementById(containerId);
   
       // containerElement가 null로 반환될 수 있기에 예외처리
       if(!containerElement) {
@@ -45,5 +45,5 @@ export default abstract class View {
   
   
       // 자식 class들에게 render기능을 구현하도록 강제시키기
-      abstract render(): void;
+      abstract render(...params: string[]): void;
   }

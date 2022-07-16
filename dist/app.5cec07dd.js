@@ -145,36 +145,49 @@ var Router =
 /** @class */
 function () {
   function Router() {
-    // window객체
-    // hashchange를 화면전환을 위한 트리거로 사용
-    // route메소드를 인자로 연결. Router의 인스턴스로 사용하기 위해 bind로 고정
+    var _this = this;
+
+    this.go = function () {
+      _this.route();
+    };
+
     window.addEventListener('hashchange', this.route.bind(this));
+    this.defaultRoute = null;
     this.routeTable = [];
-    this.defaultPage = null;
   }
 
-  Router.prototype.setDefaultPage = function (page) {
-    this.defaultPage = {
+  Router.prototype.setDefaultPage = function (page, params) {
+    if (params === void 0) {
+      params = null;
+    }
+
+    this.defaultRoute = {
       path: '',
-      page: page
+      page: page,
+      params: params
     };
   };
 
-  Router.prototype.addRoutePath = function (path, page) {
+  Router.prototype.addRoutePath = function (path, page, params) {
+    if (params === void 0) {
+      params = null;
+    }
+
     this.routeTable.push({
       path: path,
-      page: page
+      page: page,
+      params: params
     });
   };
 
   Router.prototype.route = function () {
-    var e_1, _a; // hash 알아내기
+    var e_1, _a;
 
+    var routePath = location.hash;
 
-    var routePath = location.hash; // defaultpage 체크
-
-    if (routePath === '' && this.defaultPage) {
-      this.defaultPage.page.render();
+    if (routePath === '' && this.defaultRoute) {
+      this.defaultRoute.page.render();
+      return;
     }
 
     try {
@@ -182,8 +195,17 @@ function () {
         var routeInfo = _c.value;
 
         if (routePath.indexOf(routeInfo.path) >= 0) {
-          routeInfo.page.render();
-          break;
+          if (routeInfo.params) {
+            var parseParams = routePath.match(routeInfo.params);
+
+            if (parseParams) {
+              routeInfo.page.render.apply(null, [parseParams[1]]);
+            }
+          } else {
+            routeInfo.page.render();
+          }
+
+          return;
         }
       }
     } catch (e_1_1) {
@@ -317,8 +339,8 @@ var NewsFeedApi =
 function (_super) {
   __extends(NewsFeedApi, _super);
 
-  function NewsFeedApi() {
-    return _super !== null && _super.apply(this, arguments) || this;
+  function NewsFeedApi(url) {
+    return _super.call(this, url) || this;
   }
 
   NewsFeedApi.prototype.getData = function () {
@@ -335,8 +357,8 @@ var NewsDetailApi =
 function (_super) {
   __extends(NewsDetailApi, _super);
 
-  function NewsDetailApi() {
-    return _super !== null && _super.apply(this, arguments) || this;
+  function NewsDetailApi(url) {
+    return _super.call(this, url) || this;
   }
 
   NewsDetailApi.prototype.getData = function () {
@@ -411,27 +433,32 @@ function (_super) {
   __extends(NewsDetailView, _super);
 
   function NewsDetailView(containerId) {
-    return _super.call(this, containerId, template) || this;
-  }
+    var _this = _super.call(this, containerId, template) || this;
 
-  NewsDetailView.prototype.render = function () {
-    var id = location.hash.substring(7);
-    var api = new api_1.NewsDetailApi(config_1.CONTENT_URL.replace('@id', id));
-    var newsDetail = api.getData();
+    _this.render = function (id) {
+      var api = new api_1.NewsDetailApi(config_1.CONTENT_URL.replace('@id', id));
+      var newsDetail = api.getData();
 
-    for (var i = 0; i < window.store.feeds.length; i++) {
-      if (window.store.feeds[i].id === Number(id)) {
-        window.store.feeds[i].read = true;
-        break;
+      for (var i = 0; i < window.store.feeds.length; i++) {
+        if (window.store.feeds[i].id === Number(id)) {
+          window.store.feeds[i].read = true;
+          break;
+        }
       }
-    }
 
-    this.setTemplateData('{{__comments__}}', this.makeComment(newsDetail.comments));
-    this.setTemplateData('currentPage', String(window.store.currentPage));
-    this.setTemplateData('title', newsDetail.title);
-    this.setTemplateData('content', newsDetail.content);
-    this.updateView();
-  }; // 댓글기능
+      _this.setTemplateData('{{__comments__}}', _this.makeComment(newsDetail.comments));
+
+      _this.setTemplateData('currentPage', String(window.store.currentPage));
+
+      _this.setTemplateData('title', newsDetail.title);
+
+      _this.setTemplateData('content', newsDetail.content);
+
+      _this.updateView();
+    };
+
+    return _this;
+  } // 댓글기능
 
 
   NewsDetailView.prototype.makeComment = function (comments) {
@@ -512,6 +539,38 @@ function (_super) {
   function NewsFeedView(containerId) {
     var _this = _super.call(this, containerId, template) || this;
 
+    _this.render = function (page) {
+      if (page === void 0) {
+        page = '1';
+      } // 1페이지가 디폴트 페이지
+
+
+      window.store.currentPage = Number(page);
+
+      for (var i = (window.store.currentPage - 1) * 10; i < window.store.currentPage * 10; i++) {
+        var _a = _this.feeds[i],
+            id = _a.id,
+            title = _a.title,
+            comments_count = _a.comments_count,
+            user = _a.user,
+            points = _a.points,
+            time_ago = _a.time_ago,
+            read = _a.read; // 목록 UI
+        // 읽은 적이 있으면, 배경이 빨강색으로 처리되도록
+
+        _this.addHtml("\n            <div class=\"p-6 ".concat(read ? 'bg-red-500' : 'bg-white', " mt-6 rounded-lg shadow-md transition-colors duration-500 hover:bg-green-100\">\n            <div class=\"flex\">\n              <div class=\"flex-auto\">\n                <a href=\"#/show/").concat(id, "\">").concat(title, "</a>  \n              </div>\n              <div class=\"text-center text-sm\">\n                <div class=\"w-10 text-white bg-green-300 rounded-lg px-0 py-2\">").concat(comments_count, "</div>\n              </div>\n            </div>\n            <div class=\"flex mt-3\">\n              <div class=\"grid grid-cols-3 text-sm text-gray-500\">\n                <div><i class=\"fas fa-user mr-1\"></i>").concat(user, "</div>\n                <div><i class=\"fas fa-heart mr-1\"></i>").concat(points, "</div>\n                <div><i class=\"far fa-clock mr-1\"></i>").concat(time_ago, "</div>\n              </div>  \n            </div>\n          </div>  \n          "));
+      } // 템플릿 안에 마킹해놓은 자리에 for문으로 만들어진 코드를 집어넣기
+
+
+      _this.setTemplateData('news_feed', _this.getHtml());
+
+      _this.setTemplateData('prev_page', String(window.store.currentPage > 1 ? window.store.currentPage - 1 : 1));
+
+      _this.setTemplateData('next_page', String(window.store.currentPage + 1));
+
+      _this.updateView();
+    };
+
     _this.api = new api_1.NewsFeedApi(config_1.NEWS_URL); // 매번 페이지 전체 글들을 긁어오는것은 비효율적이므로, 읽은 글은 읽었다고 처리하고 저장하도록
 
     _this.feeds = window.store.feeds; // 최초실행시, news_url의 데이터를 가져옴
@@ -523,32 +582,7 @@ function (_super) {
     }
 
     return _this;
-  }
-
-  NewsFeedView.prototype.render = function () {
-    // 1페이지가 디폴트 페이지
-    window.store.currentPage = Number(location.hash.substring(7) || 1);
-
-    for (var i = (window.store.currentPage - 1) * 10; i < window.store.currentPage * 10; i++) {
-      var _a = this.feeds[i],
-          id = _a.id,
-          title = _a.title,
-          comments_count = _a.comments_count,
-          user = _a.user,
-          points = _a.points,
-          time_ago = _a.time_ago,
-          read = _a.read; // 목록 UI
-      // 읽은 적이 있으면, 배경이 빨강색으로 처리되도록
-
-      this.addHtml("\n            <div class=\"p-6 ".concat(read ? 'bg-red-500' : 'bg-white', " mt-6 rounded-lg shadow-md transition-colors duration-500 hover:bg-green-100\">\n            <div class=\"flex\">\n              <div class=\"flex-auto\">\n                <a href=\"#/show/").concat(id, "\">").concat(title, "</a>  \n              </div>\n              <div class=\"text-center text-sm\">\n                <div class=\"w-10 text-white bg-green-300 rounded-lg px-0 py-2\">").concat(comments_count, "</div>\n              </div>\n            </div>\n            <div class=\"flex mt-3\">\n              <div class=\"grid grid-cols-3 text-sm text-gray-500\">\n                <div><i class=\"fas fa-user mr-1\"></i>").concat(user, "</div>\n                <div><i class=\"fas fa-heart mr-1\"></i>").concat(points, "</div>\n                <div><i class=\"far fa-clock mr-1\"></i>").concat(time_ago, "</div>\n              </div>  \n            </div>\n          </div>  \n          "));
-    } // 템플릿 안에 마킹해놓은 자리에 for문으로 만들어진 코드를 집어넣기
-
-
-    this.setTemplateData('news_feed', this.getHtml());
-    this.setTemplateData('prev_page', String(window.store.currentPage > 1 ? window.store.currentPage - 1 : 1));
-    this.setTemplateData('next_page', String(window.store.currentPage + 1));
-    this.updateView();
-  }; // 읽음처리 로직
+  } // 읽음처리 로직
 
 
   NewsFeedView.prototype.makeFeeds = function () {
@@ -607,8 +641,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var router_1 = __importDefault(require("./core/router"));
 
-var page_1 = require("./page"); // const container: HTMLElement | null = document.getElementById('root');
-
+var page_1 = require("./page");
 
 var store = {
   currentPage: 1,
@@ -622,7 +655,7 @@ router.setDefaultPage(newsFeedView);
 router.addRoutePath('./page', newsFeedView);
 router.addRoutePath('./page', newsDetailView); //최초 진입시 라우터 함수 직접 실행(처음엔 혼자 작동하지 X)
 
-router.route();
+router.go();
 },{"./core/router":"src/core/router.ts","./page":"src/page/index.ts"}],"../../AppData/Roaming/npm/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';

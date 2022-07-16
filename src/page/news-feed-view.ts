@@ -49,11 +49,13 @@ export default class NewsFeedView extends View {
   
     }
   
-    render(): void {
+    render = (page: string = '1'): void => {
       // 1페이지가 디폴트 페이지
-      window.store.currentPage = Number(location.hash.substring(7) || 1);
+      window.store.currentPage = Number(page);
+
         for(let i = (window.store.currentPage - 1) * 10; i < window.store.currentPage * 10; i++) {
           const {id, title, comments_count, user, points, time_ago, read} = this.feeds[i];
+
           // 목록 UI
           // 읽은 적이 있으면, 배경이 빨강색으로 처리되도록
           this.addHtml(`
@@ -86,7 +88,7 @@ export default class NewsFeedView extends View {
     }
   
     // 읽음처리 로직
-    makeFeeds(): void {
+    private makeFeeds(): void {
       for (let i = 0; i < this.feeds.length; i++) {
         this.feeds[i].read = false;
       }
