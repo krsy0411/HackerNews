@@ -236,14 +236,13 @@ var View =
 /** @class */
 function () {
   function View(containerId, template) {
-    var containerElement = document.getElementById(containerId); // containerElement가 null로 반환될 수 있기에 예외처리
+    var conatinerElement = document.getElementById(containerId);
 
-    if (!containerElement) {
-      throw '최상위 컨테이너가 없어 UI를 진행하지 못합니다';
-    } // 초기화
+    if (!conatinerElement) {
+      throw '최상위 컨테이너가 없어 UI를 진행하지 못합니다.';
+    }
 
-
-    this.container = containerElement;
+    this.container = conatinerElement;
     this.template = template;
     this.renderTemplate = template;
     this.htmlList = [];
@@ -310,7 +309,7 @@ var __extends = this && this.__extends || function () {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.NewsDetailApi = exports.NewsFeedApi = exports.Api = void 0;
+exports.NewsDetailApi = exports.NewsFeedApi = void 0;
 
 var Api =
 /** @class */
@@ -321,18 +320,15 @@ function () {
   }
 
   Api.prototype.getRequest = function () {
-    // 긁어올 페이지를 오픈
-    this.ajax.open('GET', this.url, false); // 데이터를 전송
-
-    this.ajax.send(); // 함수처리의 결과물을 반환
-
+    this.ajax.open('GET', this.url, false);
+    this.ajax.send();
     return JSON.parse(this.ajax.response);
   };
 
   return Api;
 }();
 
-exports.Api = Api;
+exports.default = Api;
 
 var NewsFeedApi =
 /** @class */
@@ -425,7 +421,7 @@ var api_1 = require("../core/api");
 
 var config_1 = require("../config");
 
-var template = "\n  <div class=\"bg-gray-600 min-h-screen\">\n    <div class=\"bg-white text-xl\">\n      <div class=\"mx-auto px-4\">\n        <div class=\"flex justify-between items-center py-6\">\n          <div class=\"flex justify-start\">\n            <h1 class=\"font-extrabold\">Hacker News</h1>\n          </div>\n          <div class=\"items-center justify-end\">\n            <a href=\"#/page/{{__currentPage__}}\" class=\"text-gray-500\">\n              <i class=\"fa fa-times\"></i>\n            </a>\n          </div>\n        </div> \n      </div>\n    </div>\n\n    <div class=\"h-full border rounded-xl bg-white m-6 p-4\">\n      <h2>{{__title__}}</h2>\n      <div class=\"text-gray-400 h-20\">\n        {{__content__}}\n      </div>   \n\n      {{__comments__}}\n\n    </div>\n  </div>\n";
+var template = "\n  <div class=\"bg-gray-600 min-h-screen pb-8\">\n    <div class=\"bg-white text-xl\">\n      <div class=\"mx-auto px-4\">\n        <div class=\"flex justify-between items-center py-6\">\n          <div class=\"flex justify-start\">\n            <h1 class=\"font-extrabold\">Hacker News</h1>\n          </div>\n          <div class=\"items-center justify-end\">\n            <a href=\"#/page/{{__currentPage__}}\" class=\"text-gray-500\">\n              <i class=\"fa fa-times\"></i>\n            </a>\n          </div>\n        </div>\n      </div>\n    </div>\n\n    <div class=\"h-full border rounded-xl bg-white m-6 p-4 \">\n      <h2>{{__title__}}</h2>\n      <div class=\"text-gray-400 h-20\">\n        {{__content__}}\n      </div>\n      {{__comments__}}\n    </div>\n  </div>\n";
 
 var NewsDetailView =
 /** @class */
@@ -437,7 +433,6 @@ function (_super) {
 
     _this.render = function (id) {
       var api = new api_1.NewsDetailApi(config_1.CONTENT_URL.replace('@id', id));
-      var newsDetail = api.getData();
 
       for (var i = 0; i < window.store.feeds.length; i++) {
         if (window.store.feeds[i].id === Number(id)) {
@@ -446,34 +441,31 @@ function (_super) {
         }
       }
 
-      _this.setTemplateData('{{__comments__}}', _this.makeComment(newsDetail.comments));
+      var newsDetail = api.getData();
 
-      _this.setTemplateData('currentPage', String(window.store.currentPage));
+      _this.setTemplateData('currentPage', window.store.currentPage.toString());
 
       _this.setTemplateData('title', newsDetail.title);
 
       _this.setTemplateData('content', newsDetail.content);
 
+      _this.setTemplateData('comments', _this.makeComment(newsDetail.comments));
+
       _this.updateView();
     };
 
     return _this;
-  } // 댓글기능
-
+  }
 
   NewsDetailView.prototype.makeComment = function (comments) {
     for (var i = 0; i < comments.length; i++) {
-      var comment = comments[i]; // 배열에 html형식으로 작성
-      // 댓글에 댓글이 달릴때마다 indent 공간이 커지도록
-
-      this.addHtml("\n          <div style=\"padding-left: ".concat(comment.level * 40, "px;\" class=\"mt-4\">\n            <div class=\"text-gray-400\">\n              <i class=\"fa fa-sort-up mr-2\"></i>\n              <strong>").concat(comment.user, "</strong> ").concat(comment.time_ago, "\n            </div>\n            <p class=\"text-gray-700\">").concat(comment.content, "</p>\n          </div>   \n        ")); // 대댓글 내용들을 재귀함수 형태로 push
-      // i번째 대댓글의 댓글이 존재하면
+      var comment = comments[i];
+      this.addHtml("\n        <div style=\"padding-left: ".concat(comment.level * 40, "px;\" class=\"mt-4\">\n          <div class=\"text-gray-400\">\n            <i class=\"fa fa-sort-up mr-2\"></i>\n            <strong>").concat(comment.user, "</strong> ").concat(comment.time_ago, "\n          </div>\n          <p class=\"text-gray-700\">").concat(comment.content, "</p>\n        </div>      \n      "));
 
       if (comment.comments.length > 0) {
         this.addHtml(this.makeComment(comment.comments));
       }
-    } // push 내용을 하나의 문자열로 집어넣기
-
+    }
 
     return this.getHtml();
   };
@@ -529,7 +521,7 @@ var api_1 = require("../core/api");
 
 var config_1 = require("../config");
 
-var template = "\n<div class=\"bg-gray-600 min-h-screen\">\n<div class=\"bg-white text-xl\">\n<div class=\"mx-auto px-4\">\n      <div class=\"flex justify-between items-center py-6\">\n        <div class=\"flex justify-start\">\n          <h1 class=\"font-extrabold\">Hacker News</h1>\n        </div>\n        <div class=\"items-center justify-end\">\n          <a href=\"#/page/{{__prev_page__}}\" class=\"text-gray-500\">\n            Previous\n          </a>\n          <a href=\"#/page/{{__next_page__}}\" class=\"text-gray-500 ml-4\">\n            Next\n          </a>\n        </div>\n      </div> \n    </div>\n  </div>\n  <div class=\"p-4 text-2xl text-gray-700\">\n    {{__news_feed__}}        \n  </div>\n  </div>\n";
+var template = "\n<div class=\"bg-gray-600 min-h-screen\">\n  <div class=\"bg-white text-xl\">\n    <div class=\"mx-auto px-4\">\n      <div class=\"flex justify-between items-center py-6\">\n        <div class=\"flex justify-start\">\n          <h1 class=\"font-extrabold\">Hacker News</h1>\n        </div>\n        <div class=\"items-center justify-end\">\n          <a href=\"#/page/{{__prev_page__}}\" class=\"text-gray-500\">\n            Previous\n          </a>\n          <a href=\"#/page/{{__next_page__}}\" class=\"text-gray-500 ml-4\">\n            Next\n          </a>\n        </div>\n      </div> \n    </div>\n  </div>\n  <div class=\"p-4 text-2xl text-gray-700\">\n    {{__news_feed__}}        \n  </div>\n</div>\n";
 
 var NewsFeedView =
 /** @class */
@@ -542,8 +534,7 @@ function (_super) {
     _this.render = function (page) {
       if (page === void 0) {
         page = '1';
-      } // 1페이지가 디폴트 페이지
-
+      }
 
       window.store.currentPage = Number(page);
 
@@ -555,12 +546,10 @@ function (_super) {
             user = _a.user,
             points = _a.points,
             time_ago = _a.time_ago,
-            read = _a.read; // 목록 UI
-        // 읽은 적이 있으면, 배경이 빨강색으로 처리되도록
+            read = _a.read;
 
-        _this.addHtml("\n            <div class=\"p-6 ".concat(read ? 'bg-red-500' : 'bg-white', " mt-6 rounded-lg shadow-md transition-colors duration-500 hover:bg-green-100\">\n            <div class=\"flex\">\n              <div class=\"flex-auto\">\n                <a href=\"#/show/").concat(id, "\">").concat(title, "</a>  \n              </div>\n              <div class=\"text-center text-sm\">\n                <div class=\"w-10 text-white bg-green-300 rounded-lg px-0 py-2\">").concat(comments_count, "</div>\n              </div>\n            </div>\n            <div class=\"flex mt-3\">\n              <div class=\"grid grid-cols-3 text-sm text-gray-500\">\n                <div><i class=\"fas fa-user mr-1\"></i>").concat(user, "</div>\n                <div><i class=\"fas fa-heart mr-1\"></i>").concat(points, "</div>\n                <div><i class=\"far fa-clock mr-1\"></i>").concat(time_ago, "</div>\n              </div>  \n            </div>\n          </div>  \n          "));
-      } // 템플릿 안에 마킹해놓은 자리에 for문으로 만들어진 코드를 집어넣기
-
+        _this.addHtml("\n        <div class=\"p-6 ".concat(read ? 'bg-red-500' : 'bg-white', " mt-6 rounded-lg shadow-md transition-colors duration-500 hover:bg-green-100\">\n          <div class=\"flex\">\n            <div class=\"flex-auto\">\n              <a href=\"#/show/").concat(id, "\">").concat(title, "</a>  \n            </div>\n            <div class=\"text-center text-sm\">\n              <div class=\"w-10 text-white bg-green-300 rounded-lg px-0 py-2\">").concat(comments_count, "</div>\n            </div>\n          </div>\n          <div class=\"flex mt-3\">\n            <div class=\"grid grid-cols-3 text-sm text-gray-500\">\n              <div><i class=\"fas fa-user mr-1\"></i>").concat(user, "</div>\n              <div><i class=\"fas fa-heart mr-1\"></i>").concat(points, "</div>\n              <div><i class=\"far fa-clock mr-1\"></i>").concat(time_ago, "</div>\n            </div>  \n          </div>\n        </div>    \n      "));
+      }
 
       _this.setTemplateData('news_feed', _this.getHtml());
 
@@ -571,19 +560,17 @@ function (_super) {
       _this.updateView();
     };
 
-    _this.api = new api_1.NewsFeedApi(config_1.NEWS_URL); // 매번 페이지 전체 글들을 긁어오는것은 비효율적이므로, 읽은 글은 읽었다고 처리하고 저장하도록
+    _this.feeds = window.store.feeds;
+    _this.api = new api_1.NewsFeedApi(config_1.NEWS_URL);
 
-    _this.feeds = window.store.feeds; // 최초실행시, news_url의 데이터를 가져옴
-
-    if (_this.feeds.length === 0) {
+    if (window.store.feeds.length === 0) {
       _this.feeds = window.store.feeds = _this.api.getData();
 
       _this.makeFeeds();
     }
 
     return _this;
-  } // 읽음처리 로직
-
+  }
 
   NewsFeedView.prototype.makeFeeds = function () {
     for (var i = 0; i < this.feeds.length; i++) {
@@ -652,9 +639,8 @@ var router = new router_1.default();
 var newsFeedView = new page_1.NewsFeedView('root');
 var newsDetailView = new page_1.NewsDetailView('root');
 router.setDefaultPage(newsFeedView);
-router.addRoutePath('./page', newsFeedView);
-router.addRoutePath('./page', newsDetailView); //최초 진입시 라우터 함수 직접 실행(처음엔 혼자 작동하지 X)
-
+router.addRoutePath('/page/', newsFeedView, /page\/(\d+)/);
+router.addRoutePath('/show/', newsDetailView, /show\/(\d+)/);
 router.go();
 },{"./core/router":"src/core/router.ts","./page":"src/page/index.ts"}],"../../AppData/Roaming/npm/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
@@ -684,7 +670,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58004" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56694" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

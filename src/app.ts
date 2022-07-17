@@ -1,6 +1,6 @@
 import Router from './core/router';
-import {NewsDetailView, NewsFeedView} from './page';
-import {Store} from './types'
+import { NewsFeedView, NewsDetailView } from './page';
+import { Store } from './types';
 
 const store: Store = {
   currentPage: 1,
@@ -21,7 +21,7 @@ const newsDetailView = new NewsDetailView('root');
 
 router.setDefaultPage(newsFeedView);
 
-router.addRoutePath('./page', newsFeedView);
-router.addRoutePath('./page', newsDetailView);
-//최초 진입시 라우터 함수 직접 실행(처음엔 혼자 작동하지 X)
+router.addRoutePath('/page/', newsFeedView, /page\/(\d+)/);
+router.addRoutePath('/show/', newsDetailView, /show\/(\d+)/);
+
 router.go();
