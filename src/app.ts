@@ -5,8 +5,8 @@ import Store from './store';
 const store = new Store();
 
 const router: Router = new Router();
-const newsFeedView = new NewsFeedView('root');
-const newsDetailView = new NewsDetailView('root');
+const newsFeedView = new NewsFeedView('root', store);
+const newsDetailView = new NewsDetailView('root', store);
 
 router.setDefaultPage(newsFeedView);
 
